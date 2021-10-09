@@ -1,0 +1,20 @@
+services:
+        ui:
+                build: ./ui
+                image: ui
+                ports:
+                        - "8000:80"
+                container_name: ui
+        field:
+                build: ./field
+                image: field
+                ports:
+                        - "8002:80"
+                container_name: field
+        mino:
+                build: ./mino
+                image: mino
+                ports:
+                        - "8001:80"
+                container_name: mino
+
