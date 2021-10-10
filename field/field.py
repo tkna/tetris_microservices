@@ -65,11 +65,18 @@ def get_mino_by_id(mino_id):
 def update_mino_by_id(mino_id):
     op = request.json.get('operation')
     if op == "down":
-        result = under_control_minos[str(mino_id)].down()
-        if result is not None:
-            return jsonify(result)
-        else:
-            return jsonify({'message': 'collision'})
+        result = under_control_minos[str(mino_id)].move(op='down')
+    elif op == "left":
+        result = under_control_minos[str(mino_id)].move(op='left')
+    elif op == "right":
+        result = under_control_minos[str(mino_id)].move(op='right')
+    else:
+        return jsonify({'message': 'invalid operation'}), 400
+    
+    if result is not None:
+        return jsonify(result)
+    else:
+        return jsonify({'message': 'collision'})
 
 
 class Field:
@@ -137,6 +144,31 @@ class Mino:
             cood = dict()
             cood['row'] = i['row'] + 1
             cood['col'] = i['col']
+            new_coords.append(cood)
+
+        field.unset_object(self.coords)
+        if field.is_collision(new_coords):
+            print("collision")
+            field.set_object(self.coords, self.color_id)
+            return None
+        else:
+            self.coords = new_coords
+            field.set_object(self.coords, self.color_id)
+            return self.to_dict()
+
+    def move(self, op):
+        new_coords = list()
+        for i in self.coords:
+            cood = dict()
+            if op == 'down':
+                cood['row'] = i['row'] + 1
+                cood['col'] = i['col']
+            elif op == 'left':
+                cood['row'] = i['row']
+                cood['col'] = i['col'] - 1
+            elif op == 'right':
+                cood['row'] = i['row']
+                cood['col'] = i['col'] + 1
             new_coords.append(cood)
 
         field.unset_object(self.coords)
