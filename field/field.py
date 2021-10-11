@@ -40,7 +40,7 @@ def new_mino():
         row = y0 - i['y']
         coords.append({'row': row, 'col': col})
     if not field.is_collision(coords):
-        mino = Mino(mino_id, coords, color_id)
+        mino = Mino(mino_id, x0, y0, coords, color_id)
         under_control_minos[str(mino_id)] = mino
         field.set_object(coords, color_id)
         return jsonify(mino.to_dict()), 201
@@ -133,30 +133,24 @@ class Field:
         return res
 
 class Mino:
-    def __init__(self, mino_id, coords, color_id):
+    def __init__(self, mino_id, x, y, coords, color_id):
         self.id = mino_id
-        self.coords = coords
+        self.x = x                  # origin x
+        self.y = y                  # origin y
+        self.coords = coords        # coordinates of blocs (absolute)
         self.color_id = color_id
 
-    def down(self):
-        new_coords = list()
-        for i in self.coords:
-            cood = dict()
-            cood['row'] = i['row'] + 1
-            cood['col'] = i['col']
-            new_coords.append(cood)
-
-        field.unset_object(self.coords)
-        if field.is_collision(new_coords):
-            print("collision")
-            field.set_object(self.coords, self.color_id)
-            return None
-        else:
-            self.coords = new_coords
-            field.set_object(self.coords, self.color_id)
-            return self.to_dict()
-
     def move(self, op):
+        if op == 'down':
+            x_new = self.x
+            y_new = self.y + 1
+        elif op == 'left':
+            x_new = self.x - 1
+            y_new = self.y
+        elif op == 'right':
+            x_new = self.x + 1
+            y_new = self.y
+
         new_coords = list()
         for i in self.coords:
             cood = dict()
@@ -177,9 +171,17 @@ class Mino:
             field.set_object(self.coords, self.color_id)
             return None
         else:
+            self.x = x_new
+            self.y = y_new
             self.coords = new_coords
             field.set_object(self.coords, self.color_id)
             return self.to_dict()
+
+#    def rotate(self):
+#        new_coords_relative = list()
+#        for i in self.coords_relative:
+#            cood = dict()           
+
 
     def to_dict(self):
         res = dict()
