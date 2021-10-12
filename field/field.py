@@ -1,8 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import logging
 
 app = Flask(__name__)
 CORS(app)
+
+LOGFILE_NAME = "flask.log"
+app.logger.setLevel(logging.DEBUG)
+log_handler = logging.FileHandler(LOGFILE_NAME)
+log_handler.setLevel(logging.DEBUG)
+app.logger.addHandler(log_handler)
+
 
 field = None
 under_control_minos = dict()
@@ -70,6 +78,8 @@ def update_mino_by_id(mino_id):
         result = under_control_minos[str(mino_id)].move(op='left')
     elif op == "right":
         result = under_control_minos[str(mino_id)].move(op='right')
+    elif op == "rotate":
+        result = under_control_minos[str(mino_id)].rotate()
     else:
         return jsonify({'message': 'invalid operation'}), 400
     
@@ -177,10 +187,29 @@ class Mino:
             field.set_object(self.coords, self.color_id)
             return self.to_dict()
 
-#    def rotate(self):
-#        new_coords_relative = list()
-#        for i in self.coords_relative:
-#            cood = dict()           
+    def rotate(self):
+        app.logger.debug("x: {}, y: {}".format(self.x, self.y))
+
+        new_coords = list()
+        for i in self.coords:
+            cood = dict()
+            x_relative = i['col'] - self.x
+            y_relative = self.y - i['row']
+            cood['col'] = self.x - y_relative   # minus y_relative because of 90 degree counter-clockwise
+            cood['row'] = self.y - x_relative   # minus x_relative because the coordinate system is upside down in the field
+            app.logger.debug("x_relative: {}, y_relative: {}".format(x_relative, y_relative))
+            app.logger.debug("col: {}, row: {}".format(cood['col'], cood['row']))
+            new_coords.append(cood)
+
+        field.unset_object(self.coords)
+        if field.is_collision(new_coords):
+            print("collision")
+            field.set_object(self.coords, self.color_id)
+            return None
+        else:
+            self.coords = new_coords
+            field.set_object(self.coords, self.color_id)
+            return self.to_dict()      
 
 
     def to_dict(self):
