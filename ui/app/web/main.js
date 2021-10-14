@@ -1,7 +1,7 @@
 var colorMap;
 
 async function fetchColorMap() {
-        return fetch('./colors')
+        return fetch('/colors')
                 .then((response) => response.json())
                 .then((json) => {
                         colorMap = json;
@@ -9,7 +9,7 @@ async function fetchColorMap() {
 }
 
 async function fetchField() {
-        return fetch('http://192.168.12.101:8002/field')
+        return fetch('/field')
                 .then((response) => response.json())
                 .then((field) => {
                         draw(field);

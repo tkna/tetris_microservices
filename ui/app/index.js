@@ -1,6 +1,6 @@
 const express = require('express');
 const fs = require('fs');
-//const colors = require('./colors.json');
+const request = require('request');
 
 const app = express();
 app.use(express.static('web'));
@@ -30,5 +30,14 @@ app.post('/colors', (req, res) => {
         res.json(colorItem);
 });
 
+app.get('/field', (req, res) => {
+        request.get({
+                uri: 'http://field/field',
+                headers: {'Content-type': 'application/json'},
+                json: true
+        }, function(err, rq, data){
+                res.json(data);
+        })
+});
 
 app.listen(80, () => console.log('Listening on port 80'));
