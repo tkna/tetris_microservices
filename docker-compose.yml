@@ -17,4 +17,9 @@ services:
                 ports:
                         - "8001:80"
                 container_name: mino
-
+        game:
+                build: ./game
+                image: game
+                ports:
+                        - "8003:80"
+                container_name: game
