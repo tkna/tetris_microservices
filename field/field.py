@@ -13,7 +13,6 @@ app.logger.addHandler(log_handler)
 
 
 field = None
-#under_control_minos = dict()
 
 @app.route('/field', methods=['GET'])
 def get_field():
@@ -55,61 +54,21 @@ def set_object():
         resp["result"] = "success"
     return jsonify(resp)
 
-"""
-@app.route('/minos', methods=['POST'])
-def new_mino():
-    color_id = request.json.get('colorId')
-    obj_coords = request.json.get('coordinates')
-    mino_id = len(under_control_minos)
-
-    x0 = int(field.width / 2)
-    y0 = 3
-    coords = list()
-    for i in obj_coords:
-        col = x0 + i['x']
-        row = y0 - i['y']
-        coords.append({'row': row, 'col': col})
-    if not field.is_collision(coords):
-        mino = Mino(mino_id, x0, y0, coords, color_id)
-        under_control_minos[str(mino_id)] = mino
-        field.set_object(coords, color_id)
-        return jsonify(mino.to_dict()), 201
+@app.route('/move', methods=['POST'])
+def move_object():
+    resp = dict()
+    coords_from = request.json.get('coords_from')
+    coords_to = request.json.get('coords_to')
+    color_id = request.json.get('color_id')
+    field.unset_object(coords_from)
+    if field.is_collision(coords_to):
+        field.set_object(coords_from, color_id)
+        resp["result"] = "failed"
+        resp["message"] = "collision"
     else:
-        return jsonify({'message': 'collision'})
-
-
-@app.route('/minos', methods=['GET'])
-def get_minos():
-    res = dict()
-    for k, v in under_control_minos.items():
-        res[k] = v.to_dict()
-
-    return jsonify(res)
-
-@app.route('/minos/<int:mino_id>', methods=['GET'])
-def get_mino_by_id(mino_id):
-    mino = under_control_minos[str(mino_id)]
-    return jsonify(mino.to_dict())
-
-@app.route('/minos/<int:mino_id>', methods=['PUT'])
-def update_mino_by_id(mino_id):
-    op = request.json.get('operation')
-    if op == "down":
-        result = under_control_minos[str(mino_id)].move(op='down')
-    elif op == "left":
-        result = under_control_minos[str(mino_id)].move(op='left')
-    elif op == "right":
-        result = under_control_minos[str(mino_id)].move(op='right')
-    elif op == "rotate":
-        result = under_control_minos[str(mino_id)].rotate()
-    else:
-        return jsonify({'message': 'invalid operation'}), 400
-    
-    if result is not None:
-        return jsonify(result)
-    else:
-        return jsonify({'message': 'collision'})
-"""
+        field.set_object(coords_to, color_id)
+        resp["result"] = "success"
+    return jsonify(resp)
 
 class Field:
 
@@ -164,84 +123,6 @@ class Field:
         res['data'] = self.data
         return res
 
-"""
-class Mino:
-    def __init__(self, mino_id, x, y, coords, color_id):
-        self.id = mino_id
-        self.x = x                  # origin x
-        self.y = y                  # origin y
-        self.coords = coords        # coordinates of blocs (absolute)
-        self.color_id = color_id
-
-    def move(self, op):
-        if op == 'down':
-            x_new = self.x
-            y_new = self.y + 1
-        elif op == 'left':
-            x_new = self.x - 1
-            y_new = self.y
-        elif op == 'right':
-            x_new = self.x + 1
-            y_new = self.y
-
-        new_coords = list()
-        for i in self.coords:
-            cood = dict()
-            if op == 'down':
-                cood['row'] = i['row'] + 1
-                cood['col'] = i['col']
-            elif op == 'left':
-                cood['row'] = i['row']
-                cood['col'] = i['col'] - 1
-            elif op == 'right':
-                cood['row'] = i['row']
-                cood['col'] = i['col'] + 1
-            new_coords.append(cood)
-
-        field.unset_object(self.coords)
-        if field.is_collision(new_coords):
-            print("collision")
-            field.set_object(self.coords, self.color_id)
-            return None
-        else:
-            self.x = x_new
-            self.y = y_new
-            self.coords = new_coords
-            field.set_object(self.coords, self.color_id)
-            return self.to_dict()
-
-    def rotate(self):
-        app.logger.debug("x: {}, y: {}".format(self.x, self.y))
-
-        new_coords = list()
-        for i in self.coords:
-            cood = dict()
-            x_relative = i['col'] - self.x
-            y_relative = self.y - i['row']
-            cood['col'] = self.x - y_relative   # minus y_relative because of 90 degree counter-clockwise
-            cood['row'] = self.y - x_relative   # minus x_relative because the coordinate system is upside down in the field
-            app.logger.debug("x_relative: {}, y_relative: {}".format(x_relative, y_relative))
-            app.logger.debug("col: {}, row: {}".format(cood['col'], cood['row']))
-            new_coords.append(cood)
-
-        field.unset_object(self.coords)
-        if field.is_collision(new_coords):
-            print("collision")
-            field.set_object(self.coords, self.color_id)
-            return None
-        else:
-            self.coords = new_coords
-            field.set_object(self.coords, self.color_id)
-            return self.to_dict()      
-
-
-    def to_dict(self):
-        res = dict()
-        res['id'] = self.id
-        res['coords'] = self.coords
-        res['colorId'] = self.color_id
-        return res
-"""
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
