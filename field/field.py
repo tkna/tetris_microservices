@@ -13,7 +13,7 @@ app.logger.addHandler(log_handler)
 
 
 field = None
-under_control_minos = dict()
+#under_control_minos = dict()
 
 @app.route('/field', methods=['GET'])
 def get_field():
@@ -32,8 +32,30 @@ def create_field():
     #field_id = str(len(fields) + 1)
     field = Field(width, height)
     #fields[field_id] = field
-    return jsonify(field.to_dict())
+    return jsonify(field.to_dict()), 201
 
+@app.route('/collision', methods=['POST'])
+def is_collision():
+    coords = request.json.get('coords')
+    result = field.is_collision(coords)
+    resp = dist()
+    resp["result"] = result
+    return jsonify(resp)
+
+@app.route('/set', methods=['POST'])
+def set_object():
+    resp = dict()
+    coords = request.json.get('coords')
+    color_id = request.json.get('color_id')
+    if field.is_collision(coords):
+        resp["result"] = "failed"
+        resp["message"] = "collision"
+    else:
+        field.set_object(coords, color_id)
+        resp["result"] = "success"
+    return jsonify(resp)
+
+"""
 @app.route('/minos', methods=['POST'])
 def new_mino():
     color_id = request.json.get('colorId')
@@ -87,7 +109,7 @@ def update_mino_by_id(mino_id):
         return jsonify(result)
     else:
         return jsonify({'message': 'collision'})
-
+"""
 
 class Field:
 
@@ -142,6 +164,7 @@ class Field:
         res['data'] = self.data
         return res
 
+"""
 class Mino:
     def __init__(self, mino_id, x, y, coords, color_id):
         self.id = mino_id
@@ -218,7 +241,7 @@ class Mino:
         res['coords'] = self.coords
         res['colorId'] = self.color_id
         return res
-
+"""
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
