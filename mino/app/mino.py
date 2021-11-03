@@ -2,9 +2,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json, requests
 import random
+import logging
 
 app = Flask(__name__)
 CORS(app)
+app.logger.setLevel(logging.DEBUG)
 
 instances = dict()
 
@@ -32,7 +34,8 @@ def create_instance():
     res = instance.set_to_field()
     if res["result"] == "success":
         instances[str(instance_id)] = instance
-        return jsonify(instance.to_dict()), 201
+        res["instance"] = instance.to_dict()
+        return jsonify(res), 201
     elif res["result"] == "failed":
         if res["message"] == "collision":
             return jsonify(res)
