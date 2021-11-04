@@ -40,4 +40,15 @@ app.get('/field', (req, res) => {
         })
 });
 
+app.post('/move', (req, res) => {
+        console.log('req.body.operation:' + req.body.operation)
+        request.post({
+                uri: 'http://game/move',
+                headers: {'Content-type': 'application/json'},
+                json: req.body
+        }, function(err, response, data){
+                res.json(data);
+        })
+});
+
 app.listen(80, () => console.log('Listening on port 80'));

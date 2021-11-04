@@ -45,6 +45,8 @@ def move_instance(instance_id):
     op = request.json.get('operation')
     if op == "down":
         result = instances[str(instance_id)].move(op='down')
+        if result["result"] != "success":
+            del instances[str(instance_id)]
     elif op == "left":
         result = instances[str(instance_id)].move(op='left')
     elif op == "right":

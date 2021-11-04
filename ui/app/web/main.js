@@ -16,6 +16,43 @@ async function fetchField() {
                 })
 }
 
+async function move(op) {
+  //const data = '{"operation":"' + op + '"}';
+  //console.log('data:' + data)
+  const data = { operation: op }
+  const param = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    // リクエストボディ
+    body: JSON.stringify(data)
+  };
+
+  return fetch('/move', param)
+    .then((response) => response.json())
+    .then((json) => {
+          fetchField();
+  })
+}
+
+document.addEventListener('keydown', (event) => {
+  switch (event.key) {
+		case 'ArrowUp':
+			move('rotate')
+			break;
+		case 'ArrowDown':
+			move('down')
+			break;
+		case 'ArrowLeft':
+			move('left')
+			break;
+		case 'ArrowRight':
+			move('right')
+			break;
+	}
+});
+
 function draw(json) {
   const BLOCK_SIZE = 20;
   const WALL_SIZE = 3;

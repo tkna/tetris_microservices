@@ -4,10 +4,10 @@ import (
         "bytes"
         "io/ioutil"
         "encoding/json"
-        "fmt"
+//        "fmt"
         "net/http"
         "strconv"
-//        "time"
+        "time"
 
         "github.com/labstack/echo"
 )
@@ -39,11 +39,21 @@ type CreateMinoInstanceResponse struct {
         Instance MinoInstance   `json:"instance"`
 }
 
+type MoveInstanceResponse struct {
+        Result string   `json:"result"`
+        Message string  `json:"message"`
+}
+
+type MoveInstanceRequest struct {
+        Operation string `json:"operation"`
+}
+
 var games []Game
 
 func main() {
         e := echo.New()
         e.POST("/games", newGame)
+        e.POST("/move", move)
         e.Debug = true
         e.Logger.Debug(e.Start(":80"))
 }
@@ -63,16 +73,7 @@ func newGame(c echo.Context) error {
                 return err
         }
 
-        instance, err := createMinoInstance()
-        if err != nil {
-                return err
-        }
-        if instance != nil {
-                fmt.Println("success")
-                fmt.Println(instance)
-        } else {
-                fmt.Println("failed")
-        }
+        go mainLoop()
 
         return c.JSON(http.StatusOK, g)
 }
@@ -113,17 +114,72 @@ func createMinoInstance() (*MinoInstance, error) {
         return nil, err
 }
 
-/*func down() error {
+func moveInstance(op string) (*MoveInstanceResponse, error) {
+        client := &http.Client{}
 
+        URL := "http://mino/instances/0"
+        jsn := `{"operation":"` + op + `"}`
+        
+        req, err := http.NewRequest(http.MethodPut, URL, bytes.NewBuffer([]byte(jsn)))
+        if err != nil {
+                return nil, err
+        }
+
+        req.Header.Set("Content-Type", "application/json; charset=utf-8")
+        resp, err := client.Do(req)
+        if err != nil {
+                return nil, err
+        }
+
+        defer resp.Body.Close()
+
+        body, _ := ioutil.ReadAll(resp.Body)
+        var res MoveInstanceResponse
+        json.Unmarshal(body, &res)
+
+        return &res, err
 }
 
-func mainLoop() error {
-        instance, err := createMinoInstance()
+func move(c echo.Context) error {
+        req := new(MoveInstanceRequest)
+        if err := c.Bind(req); err != nil {
+                return err
+        }
+
+        if games[0].Status != "started" {
+                response := MoveInstanceResponse{Result: "failed", Message: "Status is not started"}
+                return c.JSON(http.StatusOK, response)
+        }
+
+        res, err := moveInstance(req.Operation)
         if err != nil {
                 return err
         }
-        if instance != nil {
+        return c.JSON(http.StatusOK, res)
+}
 
-                time.Sleep(time.Second * 1)
+func mainLoop() {
+        for games[0].Status != "GameOver" {
+                instance, err := createMinoInstance()
+                if err != nil {
+                        panic(err)
+                }
+                if instance != nil {
+                        falling := true
+                        for falling == true {
+                                time.Sleep(time.Second * 1)
+                                res, err := moveInstance("down")
+                                if err != nil {
+                                        panic(err)
+                                }
+                                if res.Result == "success" {
+                                        continue
+                                } else {
+                                        break
+                                }
+                        }
+                } else {
+                        games[0].Status = "GameOver"
+                }
         }
-}*/
+}
