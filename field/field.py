@@ -56,6 +56,7 @@ def set_object():
 
 @app.route('/move', methods=['POST'])
 def move_object():
+    app.logger.debug("start /move")
     resp = dict()
     coords_from = request.json.get('coords_from')
     coords_to = request.json.get('coords_to')
@@ -68,6 +69,7 @@ def move_object():
     else:
         field.set_object(coords_to, color_id)
         resp["result"] = "success"
+    app.logger.debug("end /move")
     return jsonify(resp)
 
 class Field:
@@ -125,4 +127,4 @@ class Field:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80, threaded=False)

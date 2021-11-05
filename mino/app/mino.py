@@ -42,6 +42,7 @@ def create_instance():
 
 @app.route('/instances/<int:instance_id>', methods=['PUT'])
 def move_instance(instance_id):
+    app.logger.debug("start move_instance")
     op = request.json.get('operation')
     if op == "down":
         result = instances[str(instance_id)].move(op='down')
@@ -55,7 +56,7 @@ def move_instance(instance_id):
         result = instances[str(instance_id)].rotate()
     else:
         return jsonify({'message': 'invalid operation'}), 400
-    
+    app.logger.debug("end move_instance")
     return jsonify(result)
 
 def get_field():
@@ -150,4 +151,4 @@ class MinoInstance:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80, threaded=False)
