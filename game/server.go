@@ -52,6 +52,7 @@ var games []Game
 
 func main() {
         e := echo.New()
+        e.GET("/games/:id", getGameById)
         e.POST("/games", newGame)
         e.POST("/move", move)
         e.Debug = true
@@ -76,6 +77,11 @@ func newGame(c echo.Context) error {
         go mainLoop()
 
         return c.JSON(http.StatusOK, g)
+}
+
+func getGameById(c echo.Context) error {
+        gameId, _ := strconv.Atoi(c.Param("id"))
+        return c.JSON(http.StatusOK, games[gameId])
 }
 
 func createField(width int, height int) error {
