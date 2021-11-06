@@ -43,6 +43,10 @@ def create_instance():
 @app.route('/instances/<int:instance_id>', methods=['PUT'])
 def move_instance(instance_id):
     app.logger.debug("start move_instance")
+    if str(instance_id) not in instances:
+        result = {'result': 'failed', 'message': 'nothing to move'}
+        return jsonify(result)
+
     op = request.json.get('operation')
     if op == "down":
         result = instances[str(instance_id)].move(op='down')
