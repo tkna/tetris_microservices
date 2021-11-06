@@ -51,6 +51,9 @@ def move_instance(instance_id):
     if op == "down":
         result = instances[str(instance_id)].move(op='down')
         if result["result"] != "success":
+            removed_lines = instances[str(instance_id)].check_remove()
+            result["message"] = "landed"
+            result["data"] = [{"key": "removed_lines", "value": str(removed_lines)}]
             del instances[str(instance_id)]
     elif op == "left":
         result = instances[str(instance_id)].move(op='left')
@@ -59,8 +62,13 @@ def move_instance(instance_id):
     elif op == "rotate":
         result = instances[str(instance_id)].rotate()
     elif op == "drop":
+        app.logger.debug("start drop")
         result = instances[str(instance_id)].drop()
+        removed_lines = instances[str(instance_id)].check_remove(result['coords'])
+        result["message"] = "landed"
+        result["data"] = [{"key": "removed_lines", "value": str(removed_lines)}]
         del instances[str(instance_id)]
+        app.logger.debug("end drop: removed_lines=%d", removed_lines)
     else:
         return jsonify({'message': 'invalid operation'}), 400
     app.logger.debug("end move_instance")
@@ -161,6 +169,14 @@ class MinoInstance:
         res = requests.post('http://field/drop', json=body)
         res = res.json()
         return res
+
+    def check_remove(self, coords=None):
+        if coords is None:
+            coords = self.abs_coords()
+        body = {"coords": coords}
+        res = requests.post('http://field/remove', json=body)
+        res = res.json()
+        return res['removed_lines']
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80, threaded=False)

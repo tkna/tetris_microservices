@@ -4,7 +4,7 @@ import (
         "bytes"
         "io/ioutil"
         "encoding/json"
-//        "fmt"
+        "fmt"
         "net/http"
         "strconv"
         "time"
@@ -40,8 +40,9 @@ type CreateMinoInstanceResponse struct {
 }
 
 type MoveInstanceResponse struct {
-        Result string   `json:"result"`
-        Message string  `json:"message"`
+        Result string                   `json:"result"`
+        Message string                  `json:"message"`
+        Data []map[string]string        `json:"data"`
 }
 
 type MoveInstanceRequest struct {
@@ -60,6 +61,7 @@ func main() {
 }
 
 func newGame(c echo.Context) error {
+        fmt.Println("newGame")
         g := new(Game)
         if err := c.Bind(g); err != nil {
                 return err
@@ -161,6 +163,15 @@ func move(c echo.Context) error {
         if err != nil {
                 return err
         }
+        if res.Message == "landed" { 
+                fmt.Println("landed")
+                fmt.Println(res)
+                removed_lines, _ := strconv.Atoi(res.Data[0]["value"])
+                fmt.Println("removed_lines:", removed_lines)
+                if removed_lines > 0 {
+                        fmt.Println("removed: ", removed_lines)
+                }
+        }
         return c.JSON(http.StatusOK, res)
 }
 
@@ -181,6 +192,9 @@ func mainLoop() {
                                 if res.Result == "success" {
                                         continue
                                 } else {
+                                        if res.Message == "landed" {
+                                                fmt.Println("landed")
+                                        }
                                         break
                                 }
                         }

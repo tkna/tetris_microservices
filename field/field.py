@@ -95,8 +95,23 @@ def drop_object():
 
     field.set_object(coords_to, color_id)
     resp["result"] = "success"
-    resp["message"] = coords_to
+    resp["coords"] = coords_to
     app.logger.debug("end /move")
+    return jsonify(resp)
+
+@app.route('/remove', methods=['POST'])
+def remove_lines():
+    app.logger.debug("start /remove")
+    resp = dict()
+    coords = request.json.get('coords')
+    rows = list()
+    for i in coords:
+        if i['row'] not in rows:
+            rows.append(i['row'])
+
+    removed_lines = field.remove_lines(rows)
+    resp['removed_lines'] = removed_lines
+    app.logger.debug("end /remove: removed_lines=%d", removed_lines)
     return jsonify(resp)
 
 class Field:
@@ -143,6 +158,31 @@ class Field:
                 return True
 
         return False
+
+    def remove_lines(self, rows):
+        app.logger.debug("start remove_lines")
+        app.logger.debug(rows)
+        
+        rows_remove = list()
+        for row in rows:
+            app.logger.debug("row=%d", row)
+            cnt = 0
+            for col in range(self.width):
+                if self.data[row][col] != 0:
+                    cnt += 1
+            app.logger.debug("cnt=%d", cnt)
+            if cnt == self.width:
+                rows_remove.append(row)
+        
+        rows_remove.sort()
+        for row in rows_remove:
+            for r in range(row, 1, -1):
+                for c in range(self.width):
+                    self.data[r][c] = self.data[r-1][c]
+        
+        removed_lines = len(rows_remove)
+        app.logger.debug("end remove_lines")
+        return removed_lines
 
     def to_dict(self):
         res = dict()
