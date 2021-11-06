@@ -58,6 +58,9 @@ def move_instance(instance_id):
         result = instances[str(instance_id)].move(op='right')
     elif op == "rotate":
         result = instances[str(instance_id)].rotate()
+    elif op == "drop":
+        result = instances[str(instance_id)].drop()
+        del instances[str(instance_id)]
     else:
         return jsonify({'message': 'invalid operation'}), 400
     app.logger.debug("end move_instance")
@@ -153,6 +156,11 @@ class MinoInstance:
     
         return res  
 
+    def drop(self):
+        body = {"coords": self.abs_coords(), "color_id": self.color_id}
+        res = requests.post('http://field/drop', json=body)
+        res = res.json()
+        return res
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80, threaded=False)

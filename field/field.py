@@ -72,6 +72,33 @@ def move_object():
     app.logger.debug("end /move")
     return jsonify(resp)
 
+@app.route('/drop', methods=['POST'])
+def drop_object():
+    resp = dict()
+    coords_from = request.json.get('coords')
+    color_id = request.json.get('color_id')
+
+    field.unset_object(coords_from)
+    while True:
+        coords_to = list()
+        for i in coords_from:
+            coord = dict()
+            coord['row'] = i['row'] + 1
+            coord['col'] = i['col']
+            coords_to.append(coord)
+          
+        if field.is_collision(coords_to):
+            coords_to = coords_from
+            break
+        else:
+            coords_from = coords_to
+
+    field.set_object(coords_to, color_id)
+    resp["result"] = "success"
+    resp["message"] = coords_to
+    app.logger.debug("end /move")
+    return jsonify(resp)
+
 class Field:
 
     def __init__(self, width, height):

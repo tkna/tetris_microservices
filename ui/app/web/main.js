@@ -39,17 +39,20 @@ async function move(op) {
 document.addEventListener('keydown', (event) => {
   switch (event.key) {
 		case 'ArrowUp':
-			move('rotate')
+			move('rotate');
 			break;
 		case 'ArrowDown':
-			move('down')
+			move('down');
 			break;
 		case 'ArrowLeft':
-			move('left')
+			move('left');
 			break;
 		case 'ArrowRight':
-			move('right')
+			move('right');
 			break;
+    case ' ':
+      move('drop');
+      break;
 	}
 });
 
