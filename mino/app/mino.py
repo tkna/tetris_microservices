@@ -17,6 +17,16 @@ def minos():
 
     return jsonify(jsn)
 
+@app.route('/instances/<int:instance_id>', methods=['GET'])
+def get_instance(instance_id):
+    if str(instance_id) not in instances:
+        result = {'result': 'failed', 'message': 'no instance'}
+        return jsonify(result)
+    else:
+        result = {'result': 'success'}
+        result['instance'] = instances[str(instance_id)].to_dict()
+        return jsonify(result)
+
 @app.route('/instances', methods=['POST'])
 def create_instance():
     with open('minos.json') as f:
@@ -72,6 +82,16 @@ def move_instance(instance_id):
     else:
         return jsonify({'message': 'invalid operation'}), 400
     app.logger.debug("end move_instance")
+    return jsonify(result)
+
+@app.route('/instances/<int:instance_id>', methods=['DELETE'])
+def delete_instance(instance_id):
+    if str(instance_id) not in instances:
+        result = {'result': 'failed', 'message': 'nothing to delete'}
+        return jsonify(result)
+
+    del instances[str(instance_id)]
+    result = {'result': 'success', 'message': 'deleted'}
     return jsonify(result)
 
 def get_field():
