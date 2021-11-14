@@ -115,4 +115,4 @@ function draw(json) {
 }
 
 fetchColorMap();
-setInterval(fetchField, 1000);
+setInterval(fetchField, 100);

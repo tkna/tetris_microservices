@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -175,6 +176,9 @@ class Field:
                 rows_remove.append(row)
         
         rows_remove.sort()
+        if len(rows_remove) > 0:
+            self.remove_effect(rows_remove)
+
         for row in rows_remove:
             for r in range(row, 1, -1):
                 for c in range(self.width):
@@ -183,6 +187,14 @@ class Field:
         removed_lines = len(rows_remove)
         app.logger.debug("end remove_lines")
         return removed_lines
+
+    def remove_effect(self, rows_remove):
+        time.sleep(0.5)
+        for r in rows_remove:
+            for c in range(self.width):
+                self.data[r][c] = 0
+        time.sleep(0.5)
+        return
 
     def to_dict(self):
         res = dict()
