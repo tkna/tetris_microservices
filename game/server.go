@@ -2,10 +2,10 @@ package main
 
 import (
         "bytes"
-        "context"
         "io/ioutil"
         "encoding/json"
-        "fmt"
+//        "fmt"
+        "log"
         "net/http"
         "strconv"
         "time"
@@ -18,8 +18,7 @@ type Game struct {
         Width   int     `json:"width"`
         Height  int     `json:"height"`
         Status  string  `json:"status"`
-        ctx context.Context
-        cancel context.CancelFunc
+        instance *MinoInstance
 }
 
 type MinoInstance struct {
@@ -49,7 +48,8 @@ type MoveInstanceResponse struct {
 }
 
 type MoveInstanceRequest struct {
-        Operation string `json:"operation"`
+        GameId int              `json:"gameId"`
+        Operation string        `json:"operation"`
 }
 
 var games []Game
@@ -58,32 +58,51 @@ func main() {
         e := echo.New()
         e.POST("/games", newGame)
         e.GET("/games/:id", getGameById)
-        e.POST("/games/:id/reset", resetGame)
         e.POST("/move", move)
         e.Debug = true
         e.Logger.Debug(e.Start(":80"))
 }
 
 func newGame(c echo.Context) error {
-        fmt.Println("newGame")
+        log.Println("newGame")
         g := new(Game)
         if err := c.Bind(g); err != nil {
                 return err
         }
 
-        g.Id = len(games)
-        g.Status = "started"
-        games = append(games, *g)
+        // Use the gameId whose status == "GameOver" for the new game.
+        // Basically it uses gameId=0 and gameId=1 alternately because mainLoop's termination is asynchronous.
+        gameId := -1          
+        for i, game := range games {
+                instanceId := games[len(games)-1].instance.Id
+                _, err := deleteInstance(instanceId)
+                if err != nil {
+                        return err
+                }
+                if game.Status == "GameOver" {
+                        if gameId == -1 {
+                                gameId = i
+                        }
+                } else if game.Status == "started" {
+                        games[i].Status = "GameOver"
+                }
+        }
 
+        g.Status = "started"
+        if gameId == -1 {
+                g.Id = len(games)
+                games = append(games, *g)
+        } else {
+                g.Id = gameId
+                games[gameId] = *g
+        }
+        
         err := createField(g.Width, g.Height)
         if err != nil {
                 return err
         }
 
-        ctx, _ := context.WithCancel(context.Background())
-        //defer cancel()
-
-        go mainLoop(ctx)
+        go mainLoop(g.Id)
 
         return c.JSON(http.StatusOK, g)
 }
@@ -91,29 +110,6 @@ func newGame(c echo.Context) error {
 func getGameById(c echo.Context) error {
         gameId, _ := strconv.Atoi(c.Param("id"))
         return c.JSON(http.StatusOK, games[gameId])
-}
-
-func resetGame(c echo.Context) error {
-        gameId, _ := strconv.Atoi(c.Param("id"))
-        g := games[gameId]
-
-        _, err := deleteInstance(gameId)
-        if err != nil {
-                return err
-        }
-
-        err = createField(g.Width, g.Height)
-        if err != nil {
-                return err
-        }
-
-        g.Status = "started"
-
-        ctx, cancel := context.WithCancel(context.Background())
-        defer cancel()
-        go mainLoop(ctx)
-
-        return c.JSON(http.StatusOK, g)
 }
 
 func createField(width int, height int) error {
@@ -152,8 +148,8 @@ func createMinoInstance() (*MinoInstance, error) {
         return nil, err
 }
 
-func getInstance() (*MinoInstance, error) {
-        URL := "http://mino/instances/0"
+func getInstance(instanceId int) (*MinoInstance, error) {
+        URL := "http://mino/instances/" + strconv.Itoa(instanceId)
         res, err := http.Get(URL)
         if err != nil {
                 return nil, err
@@ -174,10 +170,11 @@ func getInstance() (*MinoInstance, error) {
         return nil, err
 }
 
-func moveInstance(op string) (*MoveInstanceResponse, error) {
+func moveInstance(instanceId int, op string) (*MoveInstanceResponse, error) {
+        log.Printf("moveInstance: instanceId=%d, op=%s\n", instanceId, op)
         client := &http.Client{}
 
-        URL := "http://mino/instances/0"
+        URL := "http://mino/instances/" + strconv.Itoa(instanceId)
         jsn := `{"operation":"` + op + `"}`
         
         req, err := http.NewRequest(http.MethodPut, URL, bytes.NewBuffer([]byte(jsn)))
@@ -196,6 +193,7 @@ func moveInstance(op string) (*MoveInstanceResponse, error) {
         body, _ := ioutil.ReadAll(resp.Body)
         var res MoveInstanceResponse
         json.Unmarshal(body, &res)
+        log.Println(res)
 
         return &res, err
 }
@@ -232,70 +230,69 @@ func move(c echo.Context) error {
                 return err
         }
 
-        if games[0].Status != "started" {
+        if games[req.GameId].Status != "started" {
                 response := MoveInstanceResponse{Result: "failed", Message: "Status is not started"}
                 return c.JSON(http.StatusOK, response)
         }
 
-        res, err := moveInstance(req.Operation)
+        res, err := moveInstance(games[req.GameId].instance.Id, req.Operation)
         if err != nil {
                 return err
         }
         if res.Message == "landed" { 
-                fmt.Println("landed")
-                fmt.Println(res)
+                log.Println("landed")
+                log.Println(res)
                 removed_lines, _ := strconv.Atoi(res.Data[0]["value"])
-                fmt.Println("removed_lines:", removed_lines)
+                log.Println("removed_lines:", removed_lines)
                 if removed_lines > 0 {
-                        fmt.Println("removed: ", removed_lines)
+                        log.Println("removed: ", removed_lines)
                 }
         }
         return c.JSON(http.StatusOK, res)
 }
 
-func mainLoop(ctx context.Context) {
+func mainLoop(gameId int) {
+        log.Printf("mainLoop: gameId=%d\n", gameId)
         ticker := time.NewTicker(1 * time.Second)
         defer ticker.Stop()
 
         for {
                 select {
-                case <-ctx.Done():
-                        return
                 case <-ticker.C:
-                        fmt.Println("ticker")
-                        if games[0].Status == "GameOver" {
-                                fmt.Println("GameOver")
+                        log.Println("ticker")
+                        log.Printf("gameId: %d\n", gameId)
+                        if games[gameId].Status == "GameOver" {
+                                log.Printf("gameId:%d GameOver\n", gameId)
                                 return
                         }
 
-                        ins, err := getInstance()
-                        if err != nil {
-                                panic(err)
+                        var ins *MinoInstance
+                        var err error
+                        if games[gameId].instance != nil {
+                                instanceId := games[gameId].instance.Id
+                                ins, err = getInstance(instanceId)
+                                if err != nil {
+                                        panic(err)
+                                }
                         }
 
                         if ins == nil {
-                                fmt.Println("Create MinoInstance")
+                                log.Println("Create MinoInstance")
                                 instance, err := createMinoInstance()
                                 if err != nil {
                                         panic(err)
                                 }
                                 if instance == nil {
-                                        games[0].Status = "GameOver"
+                                        games[gameId].Status = "GameOver"
+                                } else {
+                                        games[gameId].instance = instance
                                 }
                         } else {
-                                fmt.Println("MinoInstance down")
-                                _, err := moveInstance("down")
+                                log.Println("MinoInstance down")
+                                _, err := moveInstance(games[gameId].instance.Id, "down")
                                 if err != nil {
                                         panic(err)
                                 }
-                                /*if res.Result == "success" {
-                                        continue
-                                } else {
-                                        if res.Message == "landed" {
-                                                fmt.Println("landed")
-                                        }
-                                        break
-                                }*/
                         }
                         
                 }

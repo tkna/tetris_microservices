@@ -1,4 +1,5 @@
 var colorMap;
+var gameId;
 
 async function fetchColorMap() {
         return fetch('/colors')
@@ -19,7 +20,8 @@ async function fetchField() {
 async function move(op) {
   //const data = '{"operation":"' + op + '"}';
   //console.log('data:' + data)
-  const data = { operation: op }
+  const data = { gameId: gameId, operation: op }
+  console.log(data)
   const param = {
     method: "POST",
     headers: {
@@ -52,9 +54,26 @@ document.addEventListener('keydown', (event) => {
 			break;
     case ' ':
       move('drop');
+      event.preventDefault();
       break;
 	}
+  
 });
+
+function newGame() {
+  const param = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8"
+    }
+  };
+  return fetch('/game', param)
+    .then((response) => response.json())
+    .then((json) => {
+          gameId = json.id;
+          fetchField();
+  })
+}
 
 function draw(json) {
   const BLOCK_SIZE = 20;

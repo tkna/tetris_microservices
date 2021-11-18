@@ -40,7 +40,18 @@ app.get('/field', (req, res) => {
         })
 });
 
+app.post('/game', (req, res) => {
+        request.post({
+                uri: 'http://game/games',
+                headers: {'Content-type': 'application/json'},
+                json: {'width': 10, 'height': 20}
+        }, function(err, response, data){
+                res.json(data);
+        })
+});
+
 app.post('/move', (req, res) => {
+        console.log('req.body.gameId:' + req.body.gameId)
         console.log('req.body.operation:' + req.body.operation)
         request.post({
                 uri: 'http://game/move',
