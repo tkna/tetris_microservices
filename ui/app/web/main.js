@@ -56,6 +56,9 @@ document.addEventListener('keydown', (event) => {
       move('drop');
       event.preventDefault();
       break;
+    case 'p':
+      move('pause');
+      break;
 	}
   
 });

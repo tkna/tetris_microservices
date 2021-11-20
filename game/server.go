@@ -230,9 +230,24 @@ func move(c echo.Context) error {
                 return err
         }
 
-        if games[req.GameId].Status != "started" {
-                response := MoveInstanceResponse{Result: "failed", Message: "Status is not started"}
-                return c.JSON(http.StatusOK, response)
+        if req.Operation == "pause" {
+                if games[req.GameId].Status == "started" {
+                        games[req.GameId].Status = "paused"
+                        response := MoveInstanceResponse{Result: "success", Message: "paused"}
+                        return c.JSON(http.StatusOK, response)
+                } else if games[req.GameId].Status == "paused" {
+                        games[req.GameId].Status = "started"
+                        response := MoveInstanceResponse{Result: "success", Message: "started"}
+                        return c.JSON(http.StatusOK, response)
+                } else {
+                        response := MoveInstanceResponse{Result: "failed", Message: "Status is GameOver"}
+                        return c.JSON(http.StatusOK, response)
+                }
+        } else {
+                if games[req.GameId].Status != "started" {
+                        response := MoveInstanceResponse{Result: "failed", Message: "Status is not started"}
+                        return c.JSON(http.StatusOK, response)
+                } 
         }
 
         res, err := moveInstance(games[req.GameId].instance.Id, req.Operation)
@@ -264,6 +279,9 @@ func mainLoop(gameId int) {
                         if games[gameId].Status == "GameOver" {
                                 log.Printf("gameId:%d GameOver\n", gameId)
                                 return
+                        } else if games[gameId].Status == "paused" {
+                                log.Printf("gameId:%d paused\n", gameId)
+                                continue
                         }
 
                         var ins *MinoInstance
