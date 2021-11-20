@@ -83,7 +83,7 @@ func newGame(c echo.Context) error {
                         if gameId == -1 {
                                 gameId = i
                         }
-                } else if game.Status == "started" {
+                } else if game.Status == "started" || game.Status == "paused" {
                         games[i].Status = "GameOver"
                 }
         }
