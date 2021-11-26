@@ -42,15 +42,19 @@ document.addEventListener('keydown', (event) => {
   switch (event.key) {
 		case 'ArrowUp':
 			move('rotate');
+      event.preventDefault();
 			break;
 		case 'ArrowDown':
 			move('down');
+      event.preventDefault();
 			break;
 		case 'ArrowLeft':
 			move('left');
+      event.preventDefault();
 			break;
 		case 'ArrowRight':
 			move('right');
+      event.preventDefault();
 			break;
     case ' ':
       move('drop');
@@ -137,4 +141,4 @@ function draw(json) {
 }
 
 fetchColorMap();
-setInterval(fetchField, 100);
+setInterval(fetchField, 1000);

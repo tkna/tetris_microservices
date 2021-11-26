@@ -2,14 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <link rel="stylesheet" href="main.css">
   <title>Tetris</title>
 </head>
 <body>
-  <div><canvas id="stage"></canvas></div>
-  <div>
-    <button id="newButton" type="button" onclick="newGame();">New Game</button>
-    <button id="pauseButton" type="button" onclick="move('pause');">Pause</button>
+  <div id="canvas_wrapper">
+    <canvas id="stage"></canvas>
+    <div>
+      <button id="newButton" type="button" onclick="newGame();">New Game</button>
+      <button id="pauseButton" type="button" onclick="move('pause');">Pause</button>
+    </div>
   </div>
+  
   <script src="main.js"></script>
 </body>
 </html>
