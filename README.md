@@ -2,7 +2,7 @@
 テトリスを無駄にマイクロサービスにしてみるという試みです。
 現状、以下のようなアーキテクチャとなっています。
 
-[](architecture.png)
+<img src="./architecture.png" width="300">
 
 ## client (html / javascript)
 Webクライアント。暫定的に1秒に1回Pollingするという簡易的なもの。
