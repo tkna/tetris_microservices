@@ -1,0 +1,143 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-end
+  labels:
+    app: front-end
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front-end
+  template:
+    metadata:
+      labels:
+        app: front-end
+    spec:
+      containers:
+      - name: front-end
+        image: tkna/ui:0.1.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-end
+  labels:
+    app: front-end
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30001
+  selector:
+    app: front-end
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game
+  labels:
+    app: game
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game
+  template:
+    metadata:
+      labels:
+        app: game
+    spec:
+      containers:
+      - name: game
+        image: tkna/game:0.1.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game
+  labels:
+    app: game
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: game
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: field
+  labels:
+    app: field
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: field
+  template:
+    metadata:
+      labels:
+        app: field
+    spec:
+      containers:
+      - name: field
+        image: tkna/field:0.1.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: field
+  labels:
+    app: field
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: field
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mino
+  labels:
+    app: mino
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mino
+  template:
+    metadata:
+      labels:
+        app: mino
+    spec:
+      containers:
+      - name: mino
+        image: tkna/mino:0.1.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mino
+  labels:
+    app: mino
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: mino
+---
